@@ -30,10 +30,17 @@ int read_dataset( dataset_t var )
 Recover dataset `var`
 
 
-TODO
+TODO (PROTOTYPE)
 ===
 
 * implement function, that allows the recovery of the global dataset dimensions before FTI_Recovery
 * implement example for a completely contiguous 2-dim dataset 
 * implement example that handles a cell with residuals
 * implement example that includes ghost cells
+
+TODO (IMPLEMENTATION)
+===
+
+* implement function that allows to update dataset subsets
+* implement function that allows to assign a dataset to a group
+
