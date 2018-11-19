@@ -90,10 +90,18 @@ int main( int argc, char **argv ) {
     
     // declare FTI dataset (prototype)
     dataset_t var;
+    dataset_t meta;
 
     // set dataset properties
     hsize_t fdim[2] = { fdim0, fdim1 }; 
-    define_dataset( &var, dn, 2, sizeof(int), fdim );
+    
+    // define shared dataset (the decomposed global data)
+    define_dataset( &var, dn, 2, sizeof(int), fdim, SHARD_DATA );
+    
+    // define global dataset (meta data, e.g., iteration number, number of processes, etc.)
+    hsize_t scalar[] = { 1 };
+    define_dataset( &meta, "number of processes", 1, sizeof(int), scalar, GLOBL_DATA );
+    add_subset( &meta, &size, NULL, NULL );
 
     // add sub regions to dataset (contiguous rows)
     hsize_t offset[] = { ((rank/((int)sqrt(size)))%((int)sqrt(size)))*ldim0, (rank%((int)sqrt(size)))*ldim1 };
@@ -121,6 +129,7 @@ int main( int argc, char **argv ) {
  
     // if run with parameter 1 -> CHECKPOINT
     if( (argc > 1) && atoi(argv[1]) ) {
+        // TODO rewrite this function so that it writes more then one dataset.
         write_dataset( fn, var );
     // if run with parameter 0 -> RESTART
     } else if( (argc > 1) && !atoi(argv[1]) ) {
