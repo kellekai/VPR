@@ -28,8 +28,8 @@ typedef struct dataset_t {
 
 int define_dataset( dataset_t *var, char *name, int ndims, int tsize, hsize_t *span, tmode_t type );
 int add_subset( dataset_t *var, void *ptr, hsize_t *offset, hsize_t *cnt );
-int read_dataset( char *fn, dataset_t var );
-int write_dataset( char *fn, dataset_t var );
+int read_datasets( char *fn, dataset_t *var, int num );
+int write_datasets( char *fn, dataset_t *var, int num );
 int load_dataset_dims( char *fn, dataset_t *var ); 
 
 // helper routines

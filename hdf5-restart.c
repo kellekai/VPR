@@ -4,6 +4,8 @@
 #include <string.h>
 #include "hdf5-restart.h"
 
+// MAIN FUNCTIONS
+
 /**
  * THIS FUNCTION CREATES A DATASET WITH PROPERTIES:
  * tsize -> TYPE SIZE OF A DATASET MEMBER
@@ -31,16 +33,21 @@ int add_subset( dataset_t *var, void *ptr, hsize_t *offset, hsize_t *cnt )
     int idx = var->nparts-1;
     memset( &var->part[idx], 0x0, sizeof(data_t) );
     var->part[idx].ptr = ptr;
-    if(offset) var->part[idx].offset = (hsize_t*) malloc( sizeof(hsize_t) * var->ndims );
-    if(cnt) var->part[idx].count = (hsize_t*) malloc( sizeof(hsize_t) * var->ndims );
-    memcpy( var->part[idx].offset, offset, sizeof(hsize_t) * var->ndims ); 
-    memcpy( var->part[idx].count, cnt, sizeof(hsize_t) * var->ndims );
+    if(offset) {
+        var->part[idx].offset = (hsize_t*) malloc( sizeof(hsize_t) * var->ndims );
+        memcpy( var->part[idx].offset, offset, sizeof(hsize_t) * var->ndims ); 
+    }
+    if(cnt) {
+        var->part[idx].count = (hsize_t*) malloc( sizeof(hsize_t) * var->ndims );
+        memcpy( var->part[idx].count, cnt, sizeof(hsize_t) * var->ndims );
+    }
 }
 
 /**
  * THIS FUNCTION WRITES THE DATASET TO THE HDF5 FILE
  **/
-int write_dataset( char *fn, dataset_t var ) {
+int write_datasets( char *fn, dataset_t *var, int num ) 
+{
 
     hid_t fid;      // file id
     hid_t tid;      // type id
@@ -49,26 +56,32 @@ int write_dataset( char *fn, dataset_t var ) {
 
     // open hdf5 file using MPI
     fid = create_file( fn );
-    
-    // create derived datatype
-    tid = H5Tcopy( H5T_NATIVE_INT );
-    H5Tset_size( tid, var.tsize );
-
-    // open the dataset
-    switch( var.mode ) {
-        case SHARD_DATA:
-            // open dataset collectively
-            did = create_shard_dataset( var, fid, tid );
-            status = write_shard_dataset( var, did, tid );
-            break;
-        case GLOBL_DATA:
-            did = create_globl_dataset( var, fid, tid );
-            status = write_globl_dataset( var, did, tid );
-            break;
-    }
    
-    H5Tclose(tid);
-    H5Dclose(did);
+    int i;
+    for(i=0; i<num; ++i) {
+
+        // create derived datatype
+        tid = H5Tcopy( H5T_NATIVE_INT );
+        H5Tset_size( tid, var[i].tsize );
+
+        // open the dataset
+        switch( var[i].mode ) {
+            case SHARD_DATA:
+                // open dataset collectively
+                did = create_shard_dataset( var[i], fid, tid );
+                status = write_shard_dataset( var[i], did, tid );
+                break;
+            case GLOBL_DATA:
+                did = create_globl_dataset( var[i], fid, tid );
+                status = write_globl_dataset( var[i], did, tid );
+                break;
+        }
+
+        H5Tclose(tid);
+        H5Dclose(did);
+
+    }
+
     H5Fclose(fid);
 
 }
@@ -76,7 +89,7 @@ int write_dataset( char *fn, dataset_t var ) {
 /**
  * THIS FUNCTION LOADS THE DATASET FROM THE HDF5 FILE
  **/
-int read_dataset( char *fn, dataset_t var )
+int read_datasets( char *fn, dataset_t *var, int num )
 {
 
     hid_t fid;      // file id
@@ -86,29 +99,37 @@ int read_dataset( char *fn, dataset_t var )
 
     // open hdf5 file using MPI
     fid = open_file( fn );
-    
-    // create derived datatype
-    tid = H5Tcopy( H5T_NATIVE_INT );
-    H5Tset_size( tid, var.tsize );
-
-    // open the dataset
-    switch( var.mode ) {
-        case SHARD_DATA:
-            // open dataset collectively
-            did = open_shard_dataset( var, fid );
-            status = read_shard_dataset( var, did, tid );
-            break;
-        case GLOBL_DATA:
-            did = open_globl_dataset( var, fid );
-            status = read_globl_dataset( var, did, tid );
-            break;
-    }
    
-    H5Tclose(tid);
-    H5Dclose(did);
+    int i;
+    for(i=0; i<num; ++i) {
+    
+        // create derived datatype
+        tid = H5Tcopy( H5T_NATIVE_INT );
+        H5Tset_size( tid, var[i].tsize );
+
+        // open the dataset
+        switch( var[i].mode ) {
+            case SHARD_DATA:
+                // open dataset collectively
+                did = open_shard_dataset( var[i], fid );
+                status = read_shard_dataset( var[i], did, tid );
+                break;
+            case GLOBL_DATA:
+                did = open_globl_dataset( var[i], fid );
+                status = read_globl_dataset( var[i], did, tid );
+                break;
+        }
+
+        H5Tclose(tid);
+        H5Dclose(did);
+
+    }
+
     H5Fclose(fid);
 
 }
+
+// HELPER FUNCTIONS
 
 herr_t read_shard_dataset( dataset_t var, hid_t did, hid_t tid ) 
 {
@@ -247,7 +268,8 @@ int load_dataset_dims( char *fn, dataset_t *var )
 
 }
 
-hid_t create_file( char *fn ) {
+hid_t create_file( char *fn ) 
+{
 
     hid_t fid;      // file id
     hid_t plid;     // property list id
@@ -263,7 +285,8 @@ hid_t create_file( char *fn ) {
 
 }
 
-hid_t open_file( char *fn ) {
+hid_t open_file( char *fn ) 
+{
 
     hid_t fid;      // file id
     hid_t plid;     // property list id

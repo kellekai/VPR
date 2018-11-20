@@ -50,8 +50,8 @@
  * has to be an integer > 0
  */
 
-#define X 1024
-#define Y 1024
+#define X 8
+#define Y 4
 
 #define fdim0 X
 #define fdim1 Y
@@ -60,7 +60,7 @@
 #define dn "shared dataset"
 
 int rank; 
-int size; 
+int size, size_bac; 
 int i,j;    // loop iterators
 
 // dataset info structure
@@ -74,6 +74,8 @@ int main( int argc, char **argv ) {
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    size_bac = size;
 
     int ldim0 = fdim0/((int)sqrt(size));
     int ldim1 = fdim1/((int)sqrt(size));
@@ -89,19 +91,18 @@ int main( int argc, char **argv ) {
 //
     
     // declare FTI dataset (prototype)
-    dataset_t var;
-    dataset_t meta;
+    dataset_t var[2];
 
     // set dataset properties
     hsize_t fdim[2] = { fdim0, fdim1 }; 
     
     // define shared dataset (the decomposed global data)
-    define_dataset( &var, dn, 2, sizeof(int), fdim, SHARD_DATA );
+    define_dataset( &var[0], dn, 2, sizeof(int), fdim, SHARD_DATA );
     
     // define global dataset (meta data, e.g., iteration number, number of processes, etc.)
     hsize_t scalar[] = { 1 };
-    define_dataset( &meta, "number of processes", 1, sizeof(int), scalar, GLOBL_DATA );
-    add_subset( &meta, &size, NULL, NULL );
+    define_dataset( &var[1], "number of processes", 1, sizeof(int), scalar, GLOBL_DATA );
+    add_subset( &var[1], &size_bac, NULL, NULL );
 
     // add sub regions to dataset (contiguous rows)
     hsize_t offset[] = { ((rank/((int)sqrt(size)))%((int)sqrt(size)))*ldim0, (rank%((int)sqrt(size)))*ldim1 };
@@ -118,7 +119,7 @@ int main( int argc, char **argv ) {
     }
 
     for(i=0; i<ldim0; ++i) {
-        add_subset( &var, data[i], offset, count );
+        add_subset( &var[0], data[i], offset, count );
         offset[0]++;
     }
     
@@ -130,7 +131,7 @@ int main( int argc, char **argv ) {
     // if run with parameter 1 -> CHECKPOINT
     if( (argc > 1) && atoi(argv[1]) ) {
         // TODO rewrite this function so that it writes more then one dataset.
-        write_dataset( fn, var );
+        write_datasets( fn, var, 2 );
     // if run with parameter 0 -> RESTART
     } else if( (argc > 1) && !atoi(argv[1]) ) {
         // reset data to -1
@@ -139,7 +140,12 @@ int main( int argc, char **argv ) {
                 data[i][j] = -1;
             }
         }
-        read_dataset( fn, var );
+        read_datasets( fn, var, 2 );
+        if (!rank) {
+            printf( "running: %d ranks\n"
+                    "prior execution had: %d ranks\n",
+                    size, size_bac );
+        }
         int out = 0;
         for(i=0; i<ldim0; ++i) {
             for(j=0; j<ldim1; ++j) {
