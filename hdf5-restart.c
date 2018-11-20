@@ -11,7 +11,7 @@
  * tsize -> TYPE SIZE OF A DATASET MEMBER
  * ndim  -> RANK (DIMENSIONALITY) OF THE DATASET
  */
-int define_dataset( dataset_t *var, char *name, int ndims, int tsize, hsize_t *span, tmode_t mode ) 
+int define_dataset( dataset_t *var, char *name, int ndims, int tsize, hsize_t *span, tmode_t mode, dtype_t type ) 
 {
     var->ndims      = ndims;
     var->tsize      = tsize;
@@ -21,6 +21,20 @@ int define_dataset( dataset_t *var, char *name, int ndims, int tsize, hsize_t *s
     var->part       = NULL;
     strncpy( var->name, name, BUFF );
     var->mode       = mode;
+    switch( type ) {
+        case VARSIZE_INTG:
+            var->type = H5T_NATIVE_INT;
+            break;
+        case VARSIZE_DBLE:
+            var->type = H5T_NATIVE_FLOAT;
+            break;
+        case VARSIZE_CHAR:
+            var->type = H5T_NATIVE_CHAR;
+            break;
+        default:
+            printf("[ERROR] unknown base type!");
+            return -1;
+    }
 }
 
 /**
@@ -61,7 +75,7 @@ int write_datasets( char *fn, dataset_t *var, int num )
     for(i=0; i<num; ++i) {
 
         // create derived datatype
-        tid = H5Tcopy( H5T_NATIVE_INT );
+        tid = H5Tcopy( var[i].type );
         H5Tset_size( tid, var[i].tsize );
 
         // open the dataset
@@ -104,7 +118,7 @@ int read_datasets( char *fn, dataset_t *var, int num )
     for(i=0; i<num; ++i) {
     
         // create derived datatype
-        tid = H5Tcopy( H5T_NATIVE_INT );
+        tid = H5Tcopy( var[i].type );
         H5Tset_size( tid, var[i].tsize );
 
         // open the dataset

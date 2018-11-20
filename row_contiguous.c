@@ -60,7 +60,8 @@
 #define dn "shared dataset"
 
 int rank; 
-int size, size_bac; 
+int size; 
+float size_bac; 
 int i,j;    // loop iterators
 
 // dataset info structure
@@ -75,7 +76,7 @@ int main( int argc, char **argv ) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    size_bac = size;
+    size_bac = (float)size + 0.5;
 
     int ldim0 = fdim0/((int)sqrt(size));
     int ldim1 = fdim1/((int)sqrt(size));
@@ -97,11 +98,11 @@ int main( int argc, char **argv ) {
     hsize_t fdim[2] = { fdim0, fdim1 }; 
     
     // define shared dataset (the decomposed global data)
-    define_dataset( &var[0], dn, 2, sizeof(int), fdim, SHARD_DATA );
+    define_dataset( &var[0], dn, 2, sizeof(int), fdim, SHARD_DATA, VARSIZE_INTG );
     
     // define global dataset (meta data, e.g., iteration number, number of processes, etc.)
     hsize_t scalar[] = { 1 };
-    define_dataset( &var[1], "number of processes", 1, sizeof(int), scalar, GLOBL_DATA );
+    define_dataset( &var[1], "number of processes", 1, sizeof(float), scalar, GLOBL_DATA, VARSIZE_DBLE );
     add_subset( &var[1], &size_bac, NULL, NULL );
 
     // add sub regions to dataset (contiguous rows)
@@ -143,7 +144,7 @@ int main( int argc, char **argv ) {
         read_datasets( fn, var, 2 );
         if (!rank) {
             printf( "running: %d ranks\n"
-                    "prior execution had: %d ranks\n",
+                    "prior execution had: %0.1f ranks\n",
                     size, size_bac );
         }
         int out = 0;

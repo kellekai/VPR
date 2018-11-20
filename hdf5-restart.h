@@ -3,6 +3,12 @@
 
 #define BUFF 512
 
+typedef enum dtype_t {
+    VARSIZE_INTG,
+    VARSIZE_DBLE,
+    VARSIZE_CHAR
+} dtype_t;
+
 typedef enum tmode_t {
     SHARD_DATA,         // dataset shared by processes (decomposed)
     GLOBL_DATA,         // data that has the same value along all processes
@@ -24,9 +30,10 @@ typedef struct dataset_t {
     data_t *part;       // subsets
     char name[BUFF];    // dataset name
     tmode_t mode;
+    hid_t type;
 } dataset_t;
 
-int define_dataset( dataset_t *var, char *name, int ndims, int tsize, hsize_t *span, tmode_t type );
+int define_dataset( dataset_t *var, char *name, int ndims, int tsize, hsize_t *span, tmode_t mode, dtype_t type );
 int add_subset( dataset_t *var, void *ptr, hsize_t *offset, hsize_t *cnt );
 int read_datasets( char *fn, dataset_t *var, int num );
 int write_datasets( char *fn, dataset_t *var, int num );
