@@ -16,6 +16,7 @@ int define_dataset( dataset_t *var,
                     dtype_t type )
 ```  
 init global dataset attributes:
+  
 `*var`  : pointer to `dataset_t` dataset variable  
 `*name` : name string  
 `ndims` : number of dimensions, or rank  
@@ -44,8 +45,11 @@ Checkpoint datasets `var[]`
 ```C
 int read_datasets( dataset_t *var )
 ```
-Recover datasets `var[]`
-
+Recover datasets `var[]`  
+```C
+int load_dataset_dims( char *fn, dataset_t *var );
+```
+recovers the dimensions of dataset `var`, that are kept in the hdf5 file.
 
 TODO (IMPLEMENTATION)
 ===
