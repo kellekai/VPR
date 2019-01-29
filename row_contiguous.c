@@ -50,8 +50,8 @@
  * has to be an integer > 0
  */
 
-#define X 8
-#define Y 4
+#define X 32
+#define Y 32
 
 #define fdim0 X
 #define fdim1 Y
@@ -61,7 +61,7 @@
 
 int rank; 
 int size; 
-float size_bac; 
+int size_bac; 
 int i,j;    // loop iterators
 
 // dataset info structure
@@ -76,7 +76,7 @@ int main( int argc, char **argv ) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    size_bac = (float)size + 0.5;
+    size_bac = size;
 
     int ldim0 = fdim0/((int)sqrt(size));
     int ldim1 = fdim1/((int)sqrt(size));
@@ -102,7 +102,7 @@ int main( int argc, char **argv ) {
     
     // define global dataset (meta data, e.g., iteration number, number of processes, etc.)
     hsize_t scalar[] = { 1 };
-    define_dataset( &var[1], "number of processes", 1, sizeof(float), scalar, GLOBL_DATA, VARSIZE_DBLE );
+    define_dataset( &var[1], "number of processes", 1, sizeof(int), scalar, GLOBL_DATA, VARSIZE_DBLE );
     add_subset( &var[1], &size_bac, NULL, NULL );
 
     // add sub regions to dataset (contiguous rows)
@@ -144,7 +144,7 @@ int main( int argc, char **argv ) {
         read_datasets( fn, var, 2 );
         if (!rank) {
             printf( "running: %d ranks\n"
-                    "prior execution had: %0.1f ranks\n",
+                    "prior execution had: %d ranks\n",
                     size, size_bac );
         }
         int out = 0;
